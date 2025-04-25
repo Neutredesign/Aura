@@ -1,0 +1,6 @@
+J'ai commencer par creer un projet Symfony : symfony new aura --webapp
+par la suite je l'ai mis en ligne sur mon GitHub.
+
+Par la suite j'ai créer une entity "annonce" via la console : php bin/console make:entity Annonce
+
+
