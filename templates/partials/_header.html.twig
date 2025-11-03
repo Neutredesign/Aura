@@ -1,0 +1,17 @@
+<header class="site-header">
+    <a class="brand" href="{{ path('app_home') }}">
+        <span class="logo-text">AURA</span>
+    </a>
+    <nav class="site-nav">
+        {% if app.user %}
+            <a href="{{ path('app_outfit_index') }}">Tenues</a>
+            <a href="{{ path('app_dressing') }}">Dressing</a>
+            <a href="{{ path('app_profile') }}">Profil</a>
+            <a href="{{ path('app_logout') }}">Se déconnecter</a>
+        {% else %}
+            <a href="{{ path('app_home') }}">Accueil</a>
+            <a href="{{ path('app_login') }}">Connexion</a>
+            <a href="{{ path('app_register') }}">Créer un compte</a>
+        {% endif %}
+    </nav>
+</header>

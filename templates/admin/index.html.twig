@@ -1,0 +1,11 @@
+{# templates/admin/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>Admin — Dashboard</h1>
+    <ul>
+        <li>Utilisateurs : {{ usersCount }}</li>
+        <li>Vêtements : {{ garmentsCount }}</li>
+        <li>Tenues : {{ outfitsCount }}</li>
+    </ul>
+{% endblock %}

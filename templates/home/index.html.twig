@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+{% set hide_header = true %}
+{% set hero_header = true %}
+
+
+{% block body %}
+    <section class="hero-home">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+            <img class="hero-logo" src="{{ asset('images/logoblanc.png') }}" alt="Aura">
+            <div class="hero-subtitle">CRÉE. ASSEMBLE. INSPIRE.</div>
+            <div class="hero-buttons">
+                <a href="{{ path('app_login') }}" class="btn primary">Connexion</a>
+                <a href="{{ path('app_register') }}" class="btn outline">Créer un compte</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section about">
+        <div class="container about__grid">
+            <figure class="about__media">
+                <img src="{{ asset('images/apropos.jpg') }}" alt="Aperçu de l’éditeur de tenues Aura" loading="lazy">
+            </figure>
+
+            <div class="about__text">
+                <h2>À PROPOS</h2>
+                <p class="lead">
+                    Aura est ta <strong>garde-robe digitale</strong> : importe tes vêtements,
+                    compose des tenues sur un <em>canvas</em> visuel, enregistre tes looks
+                    et laisse l’IA t’inspirer. Simple, rapide et pensé <strong>mobile-first</strong>.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section how">
+        <div class="container">
+            <h2>COMMENT ÇA MARCHE ?</h2>
+            <div class="steps">
+                <div class="step">
+                    <h3>1. Ajoute tes pièces</h3>
+                    <p>Importe des images et classe ton dressing.</p>
+                </div>
+                <div class="step">
+                    <h3>2. Compose ton look</h3>
+                    <p>Glisse-dépose sur le canvas, redimensionne et enregistre ta tenue.</p>
+                </div>
+                <div class="step">
+                    <h3>3. Inspire-toi</h3>
+                    <p>Génère des looks via l'IA selon tes pièces et ton style.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

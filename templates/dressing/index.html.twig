@@ -1,0 +1,148 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon dressing | Aura{% endblock %}
+
+{% block styles %}
+    <style>
+        .dressing-container{max-width:1100px;margin:24px auto;padding:0 16px}
+
+        /* Formulaire aéré, deux colonnes sur desktop */
+        .dressing-form{
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:12px 16px;
+            margin:14px 0 24px;
+        }
+        .dressing-form .field{display:flex;flex-direction:column;gap:6px}
+        .dressing-form .field--wide{grid-column:1 / -1}
+        .dressing-form .actions{grid-column:1 / -1;margin-top:4px}
+        .dressing-form input[type="text"],
+        .dressing-form input[type="file"],
+        .dressing-form select{
+            padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;background:#fff
+        }
+
+        /* Grille de cartes (images compactes côte à côte) */
+        .clothes-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+            gap:16px;
+            margin-top:12px
+        }
+        .cloth-card{background:#fff;border:1px solid #eee;border-radius:12px;overflow:hidden;padding:10px}
+        .cloth-card img{width:100%;height:180px;object-fit:cover;border-radius:8px}
+        .cloth-card h3{margin:10px 0 6px;font-size:16px}
+        .cloth-card p{color:#666;margin:0 0 8px;font-size:14px}
+
+        /* Flashes & bouton */
+        .flash{padding:10px 12px;border-radius:10px;margin:10px 0}
+        .flash.success{background:#e9f9ef;color:#146c2e}
+        .flash.error{background:#fdeaea;color:#a31212}
+        .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;padding:10px 14px;
+            font-weight:700;border:1px solid #ddd;background:#f7f7f7;cursor:pointer}
+        .btn.primary{background:#000;color:#fff;border-color:#000}
+        .btn.danger{background:#fff;color:#a31212;border-color:#f2cfcf}
+        .btn.danger:hover{background:#fdeaea}
+
+        @media (max-width:640px){
+            .dressing-form{grid-template-columns:1fr}
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="dressing-container">
+
+        {# Flashes #}
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="flash {{ label }}">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        <h1>Mon dressing</h1>
+
+        {# ---------- Formulaire d'ajout ---------- #}
+        <h2>Ajouter un vêtement</h2>
+
+        {# IMPORTANT: action + enctype + names = identiques au contrôleur #}
+        <form
+            class="dressing-form"
+            action="{{ path('app_dressing_upload') }}"
+            method="post"
+            enctype="multipart/form-data"
+        >
+            <div class="field field--wide">
+                <label>Image (png/jpg/webp)</label>
+                <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp" required>
+            </div>
+
+            <div class="field field--wide">
+                <label>Nom</label>
+                <input type="text" name="name" placeholder="Chemise blanche">
+            </div>
+
+            <div class="field">
+                <label>Catégorie</label>
+                <select name="category">
+                    <option value="top">Haut</option>
+                    <option value="bottom">Bas</option>
+                    <option value="outer">Veste/Manteau</option>
+                    <option value="accessory">Accessoire</option>
+                    <option value="shoes">Chaussures</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Couleur</label>
+                <input type="text" name="color" placeholder="beige">
+            </div>
+
+            <div class="field">
+                <label>Saison</label>
+                <select name="season">
+                    <option value="">(—)</option>
+                    <option value="spring">printemps</option>
+                    <option value="summer">été</option>
+                    <option value="fall">automne</option>
+                    <option value="winter">hiver</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Tags (JSON)</label>
+                <input type="text" name="styleTags" placeholder='["casual","chic"]'>
+            </div>
+
+            <div class="actions">
+                <button class="btn primary" type="submit">Ajouter</button>
+            </div>
+        </form>
+
+        {# ---------- Liste des vêtements ---------- #}
+        <h2>Mes vêtements</h2>
+
+        <div class="clothes-grid">
+            {% for garment in garments %}
+                <article class="cloth-card">
+                    {# asset() sécurise le chemin /uploads/... #}
+                    <img src="{{ asset(garment.imageUrl) }}" alt="{{ garment.name }}">
+                    <h3>{{ garment.name }}</h3>
+                    <p>
+                        {{ garment.category }}
+                        {% if garment.color %} · {{ garment.color }}{% endif %}
+                        {% if garment.season %} · {{ garment.season }}{% endif %}
+                    </p>
+
+                    <form method="post" action="{{ path('app_garment_delete', { id: garment.id }) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete_garment_' ~ garment.id) }}">
+                        <button type="submit" class="btn danger">Supprimer</button>
+                    </form>
+                </article>
+            {% else %}
+                <p>Aucun vêtement pour l’instant.</p>
+            {% endfor %}
+        </div>
+
+    </div>
+{% endblock %}

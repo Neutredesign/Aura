@@ -1,17 +1,48 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <title>{% block title %}Welcome!{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
-        {% block stylesheets %}
-        {% endblock %}
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Aura{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body>
 
-        {% block javascripts %}
-            {% block importmap %}{{ importmap('app') }}{% endblock %}
-        {% endblock %}
-    </head>
-    <body>
-        {% block body %}{% endblock %}
-    </body>
+{# HEADER GLOBAL — affiché sauf sur la home #}
+{% if hide_header is not defined or not hide_header %}
+    <header class="site-header {{ hero_header is defined and hero_header ? 'header-hero' : '' }}">
+        <div class="header-inner">
+            <a class="brand" href="{{ path('app_home') }}" aria-label="Accueil Aura">
+                {% if hero_header is defined and hero_header %}
+                    <img class="logo" src="{{ asset('images/logoblanc.png') }}" alt="Aura">
+                {% else %}
+                    <img class="logo" src="{{ asset('images/logo.png') }}" alt="Aura">
+                {% endif %}
+            </a>
+
+            <nav class="site-nav" aria-label="Navigation principale">
+                {% if app.user %}
+                    <a href="{{ path('app_outfit_index') }}">Tenues</a>
+                    <a href="{{ path('app_dressing') }}">Dressing</a>
+                    <a href="{{ path('app_profile') }}">Profil</a>
+                {% else %}
+                    <a href="{{ path('app_home') }}">Accueil</a>
+                    <a href="{{ path('app_login') }}" class="btn-small">Connexion</a>
+                    <a href="{{ path('app_register') }}" class="btn-small">Créer un compte</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+{% endif %}
+
+{% block body %}{% endblock %}
+
+<footer class="footer">
+    © {{ "now"|date("Y") }} Aura — Plus qu’un look, une aura.
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
 </html>

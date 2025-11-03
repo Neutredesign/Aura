@@ -1,0 +1,82 @@
+{% extends 'base.html.twig' %}
+{% block title %}Mon profil | Aura{% endblock %}
+
+{% block body %}
+    <div style="max-width:980px;margin:0 auto;">
+
+        {# --- Messages flash --- #}
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div style="padding:.7rem 1rem;border-radius:8px;margin:.7rem 0;
+                    {% if label == 'success' %}background:#e6f4ea;color:#146c43;
+                    {% elseif label == 'error' %}background:#fde2e1;color:#a12622;
+                    {% else %}background:#eef0f2;color:#333;{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        {# --- En-tête profil : avatar + identité --- #}
+        <header style="display:flex;align-items:center;gap:2rem;margin:2rem 0 1.5rem;padding:1rem;background:#fff;border:1px solid #eee;border-radius:12px;">
+            <img
+                src="{{ user.avatarUrl ? asset(user.avatarUrl) : asset('images/avatar-silhouette.png') }}"
+                alt="Photo de profil"
+                style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:1px solid #e5e7eb;background:#f3f4f6;"
+            >
+            <div>
+                <h1 style="margin:0;font-size:1.8rem;letter-spacing:.02em;">
+                    {{ user.username ?? (user.email|split('@')[0])|upper }}
+                </h1>
+                <div style="color:#666;">{{ user.email }}</div>
+            </div>
+        </header>
+
+        {# --- Stats --- #}
+        <section style="margin-top:1.5rem;">
+            <h2 style="font-size:1.2rem;margin-bottom:.8rem;">STATISTIQUES PERSONNELLES</h2>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:680px;">
+                <div style="border:1px solid #eee;border-radius:10px;padding:1rem;background:#fff;">
+                    <div style="color:#666;font-size:.9rem;">VÊTEMENTS AJOUTÉS</div>
+                    <div style="font-size:1.6rem;font-weight:700;">{{ garmentsCount }}</div>
+                </div>
+                <div style="border:1px solid #eee;border-radius:10px;padding:1rem;background:#fff;">
+                    <div style="color:#666;font-size:.9rem;">TENUES CRÉÉES</div>
+                    <div style="font-size:1.6rem;font-weight:700;">{{ outfitsCount }}</div>
+                </div>
+                <div style="border:1px solid #eee;border-radius:10px;padding:1rem;background:#fff;">
+                    <div style="color:#666;font-size:.9rem;">LOOK FAVORIS</div>
+                    <div style="font-size:1.6rem;font-weight:700;">{{ favoritesCount }}</div>
+                </div>
+            </div>
+        </section>
+
+        {# --- Paramètres --- #}
+        <section style="margin-top:2rem;">
+            <h2 style="font-size:1.2rem;margin-bottom:.8rem;">PARAMÈTRES</h2>
+            <ul style="list-style:none;padding:0;margin:0;display:grid;gap:.6rem;max-width:420px;">
+                <li><a href="{{ path('app_profile_edit') }}" style="text-decoration:none;">Modifier les informations</a></li>
+                <li><a href="{{ path('app_profile_password') }}" style="text-decoration:none;">Modifier le mot de passe</a></li>
+            </ul>
+        </section>
+
+        {# --- Sécurité --- #}
+        <section style="margin-top:2rem;">
+            <h2 style="font-size:1.2rem;margin-bottom:.8rem;">SÉCURITÉ</h2>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+                <a href="{{ path('app_logout') }}"
+                   style="display:inline-block;padding:.5rem .9rem;border-radius:8px;background:#f1f3f5;text-decoration:none;">
+                    Se déconnecter
+                </a>
+
+                <form action="{{ path('app_profile_delete') }}" method="post"
+                      onsubmit="return confirm('Supprimer définitivement votre compte ? Cette action est irréversible.');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_account') }}">
+                    <button type="submit"
+                            style="padding:.5rem .9rem;border:none;border-radius:8px;background:#dc3545;color:#fff;cursor:pointer;">
+                        Supprimer mon compte
+                    </button>
+                </form>
+            </div>
+        </section>
+    </div>
+{% endblock %}
