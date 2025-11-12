@@ -1,82 +1,101 @@
 {% extends 'base.html.twig' %}
 {% block title %}Mon profil | Aura{% endblock %}
 
-{% block body %}
-    <div style="max-width:980px;margin:0 auto;">
+{% block styles %}
+    <style>
 
-        {# --- Messages flash --- #}
+        .page-container{max-width:1100px;margin:24px auto;padding:0 16px}
+        .section{background:#fff;border:1px solid #eee;border-radius:16px;padding:16px;margin-bottom:16px}
+        .profile-head{display:flex;align-items:center;gap:24px}
+        .profile-avatar{width:120px;height:120px;border-radius:50%;object-fit:cover;border:1px solid #e5e7eb;background:#f3f4f6}
+        .profile-name{margin:0;font-size:1.8rem;letter-spacing:.02em}
+        .profile-email{color:#666}
+        .flash{padding:10px 12px;border-radius:10px;margin:10px 0}
+        .flash.success{background:#e6f4ea;color:#146c43}
+        .flash.error{background:#fde2e1;color:#a12622}
+        .flash.info{background:#eef0f2;color:#333}
+        .page-title{margin:0 0 12px}
+        .section-title{margin:0 0 12px;font-size:1.2rem}
+        .stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:680px}
+        .stat-card{border:1px solid #eee;border-radius:12px;padding:16px;background:#fff}
+        .stat-label{color:#666;font-size:.95rem;margin:0 0 6px}
+        .stat-value{font-size:1.6rem;font-weight:700}
+        .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;padding:10px 14px;
+            font-weight:700;border:1px solid #ddd;background:#f7f7f7;text-decoration:none;color:inherit;cursor:pointer}
+        .btn.primary{background:#000;color:#fff;border-color:#000}
+        .btn.danger{background:#dc3545;color:#fff;border-color:#dc3545}
+        .btn.muted{background:#f1f3f5;border-color:#e9ecef}
+        .settings-list{list-style:none;padding:0;margin:0;display:grid;gap:10px;max-width:420px}
+        .settings-link{text-decoration:none}
+
+        @media (max-width:640px){
+            .page-container{margin:16px auto;padding:0 12px}
+            .section{padding:12px;margin-bottom:12px}
+            .profile-head{flex-direction:column;align-items:flex-start;gap:12px}
+            .stats-grid{grid-template-columns:1fr}
+            .profile-avatar{width:100px;height:100px}
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="page-container">
+
+        {# --- Flashes --- #}
         {% for label, messages in app.flashes %}
             {% for message in messages %}
-                <div style="padding:.7rem 1rem;border-radius:8px;margin:.7rem 0;
-                    {% if label == 'success' %}background:#e6f4ea;color:#146c43;
-                    {% elseif label == 'error' %}background:#fde2e1;color:#a12622;
-                    {% else %}background:#eef0f2;color:#333;{% endif %}">
-                    {{ message }}
-                </div>
+                <div class="flash {{ label == 'success' ? 'success' : (label == 'error' ? 'error' : 'info') }}">{{ message }}</div>
             {% endfor %}
         {% endfor %}
 
-        {# --- En-tête profil : avatar + identité --- #}
-        <header style="display:flex;align-items:center;gap:2rem;margin:2rem 0 1.5rem;padding:1rem;background:#fff;border:1px solid #eee;border-radius:12px;">
-            <img
-                src="{{ user.avatarUrl ? asset(user.avatarUrl) : asset('images/avatar-silhouette.png') }}"
-                alt="Photo de profil"
-                style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:1px solid #e5e7eb;background:#f3f4f6;"
-            >
-            <div>
-                <h1 style="margin:0;font-size:1.8rem;letter-spacing:.02em;">
-                    {{ user.username ?? (user.email|split('@')[0])|upper }}
-                </h1>
-                <div style="color:#666;">{{ user.email }}</div>
+        {# --- En-tête profil --- #}
+        <div class="section">
+            <div class="profile-head">
+                <img
+                    src="{{ user.avatarUrl ? asset(user.avatarUrl) : asset('images/avatar-silhouette.png') }}"
+                    alt="Photo de profil"
+                    class="profile-avatar"
+                >
+                <div>
+                    <h1 class="profile-name">
+                        {{ user.username ?? (user.email|split('@')[0])|upper }}
+                    </h1>
+                    <div class="profile-email">{{ user.email }}</div>
+                </div>
             </div>
-        </header>
+        </div>
 
-        {# --- Stats --- #}
-        <section style="margin-top:1.5rem;">
-            <h2 style="font-size:1.2rem;margin-bottom:.8rem;">STATISTIQUES PERSONNELLES</h2>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:680px;">
-                <div style="border:1px solid #eee;border-radius:10px;padding:1rem;background:#fff;">
-                    <div style="color:#666;font-size:.9rem;">VÊTEMENTS AJOUTÉS</div>
-                    <div style="font-size:1.6rem;font-weight:700;">{{ garmentsCount }}</div>
-                </div>
-                <div style="border:1px solid #eee;border-radius:10px;padding:1rem;background:#fff;">
-                    <div style="color:#666;font-size:.9rem;">TENUES CRÉÉES</div>
-                    <div style="font-size:1.6rem;font-weight:700;">{{ outfitsCount }}</div>
-                </div>
-                <div style="border:1px solid #eee;border-radius:10px;padding:1rem;background:#fff;">
-                    <div style="color:#666;font-size:.9rem;">LOOK FAVORIS</div>
-                    <div style="font-size:1.6rem;font-weight:700;">{{ favoritesCount }}</div>
-                </div>
+        {# --- Statistiques --- #}
+        <h2 class="section-title">Statistiques personnelles</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">VÊTEMENTS AJOUTÉS</div>
+                <div class="stat-value">{{ garmentsCount|default(0) }}</div>
             </div>
-        </section>
+            <div class="stat-card">
+                <div class="stat-label">TENUES CRÉÉES</div>
+                <div class="stat-value">{{ outfitsCount|default(0) }}</div>
+            </div>
+        </div>
 
         {# --- Paramètres --- #}
-        <section style="margin-top:2rem;">
-            <h2 style="font-size:1.2rem;margin-bottom:.8rem;">PARAMÈTRES</h2>
-            <ul style="list-style:none;padding:0;margin:0;display:grid;gap:.6rem;max-width:420px;">
-                <li><a href="{{ path('app_profile_edit') }}" style="text-decoration:none;">Modifier les informations</a></li>
-                <li><a href="{{ path('app_profile_password') }}" style="text-decoration:none;">Modifier le mot de passe</a></li>
-            </ul>
-        </section>
+        <h2 class="section-title">Paramètres</h2>
 
-        {# --- Sécurité --- #}
-        <section style="margin-top:2rem;">
-            <h2 style="font-size:1.2rem;margin-bottom:.8rem;">SÉCURITÉ</h2>
-            <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-                <a href="{{ path('app_logout') }}"
-                   style="display:inline-block;padding:.5rem .9rem;border-radius:8px;background:#f1f3f5;text-decoration:none;">
-                    Se déconnecter
-                </a>
+        <ul class="settings-list">
+            <li><a class="settings-link" href="{{ path('app_profile_edit') }}">Modifier les informations</a></li>
+            <li><a class="settings-link" href="{{ path('app_profile_password') }}">Modifier le mot de passe</a></li>
+        </ul>
 
-                <form action="{{ path('app_profile_delete') }}" method="post"
-                      onsubmit="return confirm('Supprimer définitivement votre compte ? Cette action est irréversible.');">
-                    <input type="hidden" name="_token" value="{{ csrf_token('delete_account') }}">
-                    <button type="submit"
-                            style="padding:.5rem .9rem;border:none;border-radius:8px;background:#dc3545;color:#fff;cursor:pointer;">
-                        Supprimer mon compte
-                    </button>
-                </form>
-            </div>
-        </section>
+        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+            <a href="{{ path('app_logout') }}" class="btn muted">Se déconnecter</a>
+
+            <form action="{{ path('app_profile_delete') }}" method="post"
+                  onsubmit="return confirm('Supprimer définitivement votre compte ? Cette action est irréversible.');">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete_account') }}">
+                <button type="submit" class="btn danger">Supprimer mon compte</button>
+            </form>
+        </div>
+
+
     </div>
 {% endblock %}

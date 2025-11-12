@@ -21,9 +21,7 @@ class OutfitController extends AbstractController
         private readonly EntityManagerInterface $em,
     ) {}
 
-    // -----------------------
     // LISTE
-    // -----------------------
     #[Route('', name: 'app_outfit_index', methods: ['GET'])]
     public function index(): Response
     {
