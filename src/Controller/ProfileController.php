@@ -75,7 +75,7 @@ class ProfileController extends AbstractController
             // username est mappé directement par le formulaire
             $this->em->flush();
 
-            $this->addFlash('success', 'Profil mis à jour ✅');
+            $this->addFlash('success', 'Profil mis à jour');
             return $this->redirectToRoute('app_profile');
         }
 
@@ -117,7 +117,7 @@ class ProfileController extends AbstractController
             $user->setPassword($hasher->hashPassword($user, $new));
             $this->em->flush();
 
-            $this->addFlash('success', 'Mot de passe mis à jour avec succès ✅');
+            $this->addFlash('success', 'Mot de passe mis à jour avec succès');
             return $this->redirectToRoute('app_profile');
         }
 
