@@ -1,0 +1,358 @@
+{% extends 'base.html.twig' %}
+{% block title %}Créer une tenue | Aura{% endblock %}
+
+{% block body %}
+    <style>
+        .look-layout{ display:grid; grid-template-columns:300px 1fr; gap:24px; max-width:1200px; margin:0 auto; }
+        .panel{ background:#fff; border:1px solid #eee; border-radius:12px; padding:16px; }
+        h1{ text-align:center; margin-bottom:1.25rem; }
+        .toolbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+
+        .switch{ display:flex; align-items:center; gap:8px; font-weight:600; }
+        .switch input{ display:none; }
+        .switch .pill{ width:48px; height:24px; border-radius:999px; background:#ddd; position:relative; display:inline-block; }
+        .switch .pill::after{ content:""; position:absolute; width:20px; height:20px; border-radius:50%; background:#fff; top:2px; left:2px; transition:all .2s; }
+        .switch input:checked + .pill{ background:#9fd; }
+        .switch input:checked + .pill::after{ transform:translateX(24px); }
+
+        .btn{ border:1px solid #ddd; padding:8px 12px; border-radius:10px; background:#f1f1f1; font-weight:600; cursor:pointer; }
+        .btn.primary{ background:#111; color:#fff; border-color:#111; }
+        .btn.ghost{ background:#f8f8f8; }
+        .select{ border:1px solid #ddd; border-radius:8px; padding:6px 8px; background:#fff; }
+
+        .canvas-wrap{ background:#f7f7f7; border:1px solid #eee; border-radius:12px; padding:8px; }
+        .canvas-frame{ position:relative; width:100%; max-width:100%; aspect-ratio:3/2; background:#fff; border:2px solid #000; border-radius:8px; overflow:hidden; }
+        #aura-canvas{ width:100%; height:100%; display:block; }
+
+        .grid-thumbs{ display:grid; grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); gap:10px; max-height:70vh; overflow:auto; }
+        .thumb{ width:100%; aspect-ratio:1/1; border:1px solid #e6e6e6; border-radius:8px; background:#fafafa; cursor:pointer; object-fit:contain; transition:transform .1s; }
+        .thumb:hover{ transform:scale(1.03); }
+
+        .save-bar{ position:sticky; bottom:0; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:12px; }
+        #status{ text-align:center; color:#555; margin-top:8px; min-height:1.2em; }
+
+        @media (max-width: 850px){
+            .look-layout{ display:flex; flex-direction:column; }
+            .panel:first-child{ order:2; }
+            .panel:last-child{ order:1; }
+        }
+    </style>
+
+    <h1>Créer une tenue</h1>
+
+    <div class="look-layout">
+        <!-- DRESSING -->
+        <div class="panel">
+            <div class="toolbar">
+                <strong>DRESSING</strong>
+                <select id="filterType" class="select">
+                    <option value="">TYPE ▾</option>
+                    <option value="haut">Haut</option>
+                    <option value="bas">Bas</option>
+                    <option value="chaussures">Chaussures</option>
+                    <option value="accessoire">Accessoire</option>
+                </select>
+            </div>
+
+            <div id="garments-list" class="grid-thumbs">
+                {% for g in garments %}
+                    {% set raw = g.imageUrl ?? '' %}
+                    {% if raw starts with('http') %}
+                        {% set imgWeb = raw %}
+                    {% else %}
+                        {% set cleaned = raw|replace({'public/':''}) %}
+                        {% set imgWeb = cleaned starts with('/') ? cleaned : '/' ~ cleaned %}
+                    {% endif %}
+                    <img
+                        src="{{ imgWeb }}"
+                        alt="{{ g.name }}"
+                        class="thumb garment-thumb"
+                        draggable="false"
+                        data-category="{{ g.category|lower }}"
+                    >
+                {% else %}
+                    <p style="text-align:center;color:#666;">Aucun vêtement. Ajoute-en depuis le Dressing.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- CANVAS -->
+        <div class="panel">
+            <div class="toolbar">
+                <label class="switch">
+                    <span>AVATAR</span>
+                    <input type="checkbox" id="avatarToggle"> {# OFF par défaut #}
+                    <span class="pill"></span>
+                    <span id="avatarState" style="font-size:.9em;opacity:.7;">OFF</span>
+                </label>
+                <div style="display:flex;gap:8px;">
+                    <button id="inspireBtn" class="btn ghost" type="button">INSPIRE MOI</button>
+                </div>
+            </div>
+
+            <div class="canvas-wrap">
+                <div class="canvas-frame">
+                    <canvas id="aura-canvas"></canvas>
+                </div>
+            </div>
+
+            <div id="status"></div>
+
+            <div class="save-bar">
+                <input id="outfitName" placeholder="Nom de la tenue" class="select" style="min-width:200px;" />
+
+                <!-- 🔁 Deux contrôles simples -->
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <button id="zBack"  class="btn ghost" type="button" title="Derrière">⬇︎ Derrière</button>
+                    <button id="zFront" class="btn ghost" type="button" title="Devant">⬆︎ Devant</button>
+                </div>
+
+                <button id="btnDeleteSelected" class="btn ghost" type="button">Supprimer</button>
+                <button id="btnClear" class="btn ghost" type="button">Vider</button>
+                <button id="btnDownload" class="btn ghost" type="button">Télécharger</button>
+                <button id="btnSave" class="btn primary" type="button">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <script>
+        (() => {
+            const statusEl = document.getElementById('status');
+            const setStatus = (m, err=false) => { statusEl.textContent = m||''; statusEl.style.color = err ? '#c00' : '#555'; };
+
+            // Fabric + sizing
+            const htmlCanvas = document.getElementById('aura-canvas');
+            const frame = htmlCanvas.parentElement;
+            const canvas = new fabric.Canvas('aura-canvas', { preserveObjectStacking:true, selection:true });
+
+            function fitCanvasToFrame(){
+                const w = Math.round(frame.clientWidth);
+                const h = Math.round(frame.clientHeight);
+                if (!w || !h) return;
+                canvas.setWidth(w);
+                canvas.setHeight(h);
+                canvas.setZoom(1);
+                canvas.requestRenderAll();
+            }
+            window.addEventListener('load', fitCanvasToFrame);
+            window.addEventListener('resize', () => requestAnimationFrame(fitCanvasToFrame));
+
+            const toRelative = (u) => u?.startsWith('http') ? new URL(u).pathname : (u || '');
+
+            // Avatar
+            const AVATAR_REL = "/images/avatar-silhouette.png";
+            let avatarObj = null;
+
+            function centerAvatar(img){
+                const w = img.getScaledWidth(), h = img.getScaledHeight();
+                img.set({ left:(canvas.getWidth()-w)/2, top:(canvas.getHeight()-h)/2 });
+            }
+            function ensureAvatarAtBack(){
+                if (avatarObj){ canvas.sendToBack(avatarObj); canvas.requestRenderAll(); }
+            }
+            function addAvatar(){
+                if (avatarObj) return;
+                fabric.util.loadImage(AVATAR_REL, (imgEl) => {
+                    if (!imgEl){ setStatus("Échec chargement avatar", true); return; }
+                    const img = new fabric.Image(imgEl, { selectable:false, evented:false });
+                    img.scaleToWidth(canvas.getWidth()*0.35);
+                    centerAvatar(img);
+                    avatarObj = img;
+                    canvas.add(img);
+                    ensureAvatarAtBack();
+                    setStatus('Avatar affiché');
+                }, null, { crossOrigin:'anonymous' });
+            }
+            function removeAvatar(){
+                if (avatarObj){ canvas.remove(avatarObj); avatarObj=null; canvas.requestRenderAll(); setStatus('Avatar masqué'); }
+            }
+            const avatarToggle = document.getElementById('avatarToggle');
+            const avatarState  = document.getElementById('avatarState');
+            avatarToggle.addEventListener('change', () => {
+                avatarState.textContent = avatarToggle.checked ? 'ON' : 'OFF';
+                avatarToggle.checked ? addAvatar() : removeAvatar();
+            });
+
+            // Ajout vêtement
+            function addGarment(url){
+                const rel = toRelative(url);
+                if (!rel) return;
+                fabric.util.loadImage(rel, (imgEl) => {
+                    if (!imgEl){ setStatus("Échec chargement image", true); return; }
+                    const oImg = new fabric.Image(imgEl, {
+                        left: 40 + Math.random()*120,
+                        top:  60 + Math.random()*80,
+                        selectable:true
+                    });
+                    oImg.scaleToWidth(Math.min(280, canvas.getWidth()*0.45));
+                    canvas.add(oImg);
+                    ensureAvatarAtBack();
+                    canvas.setActiveObject(oImg);
+                    canvas.requestRenderAll();
+                    setStatus('Vêtement ajouté');
+                }, null, { crossOrigin:'anonymous' });
+            }
+            document.querySelectorAll('.garment-thumb').forEach(img => {
+                img.addEventListener('click', () => addGarment(img.getAttribute('src')));
+            });
+
+            // Filtre dressing
+            document.getElementById('filterType').addEventListener('change', (e) => {
+                const val = (e.target.value || '').toLowerCase();
+                document.querySelectorAll('.garment-thumb').forEach(el => {
+                    const cat = (el.dataset.category || '').toLowerCase();
+                    el.style.display = !val || val === cat ? '' : 'none';
+                });
+            });
+
+            // Supprimer sélection
+            document.getElementById('btnDeleteSelected').addEventListener('click', () => {
+                const active = canvas.getActiveObject();
+                if (!active) { setStatus('Aucun objet sélectionné', true); return; }
+                canvas.remove(active);
+                canvas.discardActiveObject();
+                canvas.requestRenderAll();
+                setStatus('Objet supprimé');
+            });
+
+            // Vider
+            document.getElementById('btnClear').addEventListener('click', () => {
+                const keepAvatar = avatarObj && avatarToggle.checked;
+                canvas.getObjects().slice().forEach(o => canvas.remove(o));
+                avatarObj = null; if (keepAvatar) addAvatar();
+                setStatus('Canvas vidé');
+            });
+
+            // Télécharger PNG
+            document.getElementById('btnDownload').addEventListener('click', () => {
+                const dataURL = canvas.toDataURL({ format:'png', quality:1 });
+                const a = document.createElement('a');
+                a.href = dataURL;
+                a.download = (document.getElementById('outfitName').value || 'tenue') + '.png';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setStatus('Image téléchargée');
+            });
+
+            // ===== Z-ORDER simple : Devant / Derrière (1 cran), sans jamais passer SOUS l’avatar
+            const isAvatar = (obj) => avatarObj && obj === avatarObj;
+
+            document.getElementById('zFront').addEventListener('click', () => {
+                const o = canvas.getActiveObject();
+                if (!o) return setStatus('Aucun objet sélectionné', true);
+                if (isAvatar(o)) return; // l’avatar ne bouge pas
+                canvas.bringForward(o);
+                canvas.requestRenderAll();
+                setStatus('Objet devant');
+            });
+
+            document.getElementById('zBack').addEventListener('click', () => {
+                const o = canvas.getActiveObject();
+                if (!o) return setStatus('Aucun objet sélectionné', true);
+                if (isAvatar(o)) return; // l’avatar ne bouge pas
+                if (avatarObj){
+                    const objs = canvas.getObjects();
+                    const avatarIndex = objs.indexOf(avatarObj);
+                    const idx = objs.indexOf(o);
+                    if (idx - 1 <= avatarIndex){
+                        canvas.moveTo(o, avatarIndex + 1); // reste juste au-dessus de l’avatar
+                    } else {
+                        canvas.sendBackwards(o);
+                    }
+                } else {
+                    canvas.sendBackwards(o);
+                }
+                canvas.requestRenderAll();
+                setStatus('Objet derrière');
+            });
+
+            // Inspire moi (LOCAL — aucune requête réseau)
+            document.getElementById('inspireBtn').addEventListener('click', async (e) => {
+                const btn = e.currentTarget;
+                const prev = btn.textContent; btn.textContent = 'Génération…'; btn.disabled = true;
+                setStatus('Génération en cours…');
+                try{
+                    const thumbs = Array
+                        .from(document.querySelectorAll('.garment-thumb'))
+                        .filter(el => el.style.display !== 'none');
+
+                    if (!thumbs.length) { setStatus('Aucun vêtement disponible.', true); return; }
+
+                    const keepAvatar = avatarObj && avatarToggle.checked;
+                    canvas.getObjects().slice().forEach(o => canvas.remove(o));
+                    avatarObj = null; if (keepAvatar) addAvatar();
+
+                    const positions = [
+                        {left:80,  top:60,  w:280},
+                        {left:360, top:70,  w:260},
+                        {left:120, top:300, w:260},
+                        {left:420, top:320, w:240},
+                    ];
+
+                    const picked = thumbs.sort(() => 0.5 - Math.random()).slice(0, Math.min(4, thumbs.length));
+
+                    for (let i = 0; i < picked.length; i++) {
+                        const src = picked[i].getAttribute('src');
+                        await new Promise((resolve) => {
+                            fabric.util.loadImage(toRelative(src), (imgEl) => {
+                                if (!imgEl) return resolve();
+                                const p = positions[i % positions.length];
+                                const oImg = new fabric.Image(imgEl, { left: p.left, top: p.top, selectable:true });
+                                oImg.scaleToWidth(p.w);
+                                canvas.add(oImg);
+                                resolve();
+                            }, null, { crossOrigin:'anonymous' });
+                        });
+                    }
+
+                    ensureAvatarAtBack();
+                    canvas.requestRenderAll();
+                    setStatus('Suggestion générée');
+                } catch(err){
+                    console.error(err);
+                    setStatus('Erreur pendant la suggestion', true);
+                } finally {
+                    btn.textContent = prev; btn.disabled = false;
+                }
+            });
+
+            // Enregistrer
+            document.getElementById('btnSave').addEventListener('click', async () => {
+                setStatus('Enregistrement…');
+                const name = (document.getElementById('outfitName').value || 'Ma tenue').trim();
+                const snapshot = canvas.toDataURL({ format:'png', quality:0.92 });
+                const items = JSON.stringify(canvas.toJSON());
+                try{
+                    const res = await fetch('{{ path("app_outfit_store") }}', {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ name, snapshot, items })
+                    });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    await res.json();
+                    setStatus('Tenue enregistrée');
+                    window.location.href = '{{ path("app_outfit_index") }}';
+                } catch(e){
+                    console.error(e);
+                    setStatus('Erreur à l’enregistrement', true);
+                }
+            });
+
+            {% if initialItems is defined and initialItems %}
+            try {
+                const json = {{ initialItems|raw }};
+                canvas.loadFromJSON(json, () => {
+                    canvas.requestRenderAll();
+                    setStatus('Tenue chargée pour édition');
+                });
+            } catch(e) {}
+            {% endif %}
+            {% if initialName is defined and initialName %}
+            document.getElementById('outfitName').value = {{ initialName|json_encode|raw }};
+            {% endif %}
+        })();
+    </script>
+{% endblock %}

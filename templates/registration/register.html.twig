@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+{% set hide_header = true %}
+
+{% block title %}Créer un compte — Aura{% endblock %}
+
+{% block body %}
+    <section class="auth-section">
+        <div class="auth-bg" style="background-image:url('{{ asset('images/register.jpg') }}')"></div>
+
+        <div class="auth-container">
+            <img class="auth-logo" src="{{ asset('images/logo.png') }}" alt="Aura">
+            <div class="auth-card">
+                <h1 class="auth-title">Rejoins-nous</h1>
+
+                <form method="post" class="auth-form">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('register') }}">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+
+                    <label>Mot de passe</label>
+                    <input type="password" name="plainPassword" required>
+
+                    <label class="checkbox">
+                        <input type="checkbox" name="agreeTerms" required>
+                        J’accepte les conditions
+                    </label>
+
+                    <button class="btn primary full">Créer mon compte</button>
+                </form>
+
+                <div class="auth-meta">
+                    Déjà inscrit ? <a href="{{ path('app_login') }}"><strong>Se connecter</strong></a>
+                </div>
+                <a href="{{ path('app_home') }}" class="auth-back">← Revenir à l’accueil</a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes tenues | Aura{% endblock %}
+
+{% block body %}
+    <div class="container dressing-container">
+
+        {# Flashes #}
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="flash {{ label }}">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        <h1>Mes tenues</h1>
+
+        {# Bandeau haut avec CTA #}
+        <section class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+            <p style="margin:0;color:#555">Crée et gère tes tenues.</p>
+            <a class="btn primary" href="{{ path('app_outfit_new') }}">+ Créer une tenue</a>
+        </section>
+
+        {% if outfits is empty %}
+            <p>Aucune tenue pour l’instant.</p>
+        {% else %}
+            <div class="clothes-grid">
+                {% for outfit in outfits %}
+                    <article class="cloth-card" style="display:flex;flex-direction:column;justify-content:space-between;">
+
+                        {# Image de la tenue #}
+                        {% if outfit.snapshotUrl %}
+                            <img src="{{ outfit.snapshotUrl }}" alt="{{ outfit.name ?? ('Tenue #' ~ outfit.id) }}">
+                        {% endif %}
+
+                        <div>
+                            <h3>{{ outfit.name ?? ('Tenue #' ~ outfit.id) }}</h3>
+                            <p>{{ outfit.createdAt ? outfit.createdAt|date('d/m/Y H:i') : '' }}</p>
+                        </div>
+
+                        {# Bouton Ouvrir / Modifier #}
+                        <div class="mt-2">
+                            <a class="btn full" href="{{ path('app_outfit_show', { id: outfit.id }) }}">
+                                Ouvrir / Modifier
+                            </a>
+                        </div>
+
+                        {# Bouton Supprimer #}
+                        <div class="mt-2">
+                            <form method="post"
+                                  action="{{ path('app_outfit_delete', { id: outfit.id }) }}"
+                                  onsubmit="return confirm('Supprimer cette tenue ?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_outfit_' ~ outfit.id) }}">
+                                <button type="submit" class="btn danger full">Supprimer</button>
+                            </form>
+                        </div>
+
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
